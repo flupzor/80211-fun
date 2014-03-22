@@ -87,7 +87,6 @@ class ProbeFrame(IEEE80211):
 			self.addr2,
 			self.addr3,
 			self.nwid,
-			self.timeval,
 			self.timeval.to_datetime(),
 		)
 
