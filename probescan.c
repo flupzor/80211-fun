@@ -283,3 +283,9 @@ ps_80211_nwid(void)
 {
 	return g_probe_frame.ieee80211_nwid;
 }
+
+struct bpf_timeval
+ps_80211_timeval(void)
+{
+	return g_probe_frame.pcap_pkt_hdr->ts;
+}

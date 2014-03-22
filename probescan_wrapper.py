@@ -22,6 +22,12 @@ import os
 PROJECT_DIR=os.path.dirname(os.path.realpath(__file__))
 ps = CDLL(os.path.join(PROJECT_DIR,"probescan.so"))
 
+class BPFTimeval(Structure):
+    _fields_ = [("tv_sec", c_uint32 ), ("tv_usec", c_uint32)]
+
+    def __repr__(self):
+        return "{0}.{1}".format(self.tv_sec, self.tv_usec)
+
 " Declarations "
 
 ps_open = ps.ps_open
@@ -49,6 +55,8 @@ ps_80211_frag = ps.ps_80211_frag
 ps_80211_nwid = ps.ps_80211_nwid
 ps_80211_nwid.restype = c_char_p
 
+ps_80211_timeval = ps.ps_80211_timeval
+ps_80211_timeval.restype = BPFTimeval
 
 class IEEE80211(object):
 	IEEE80211_FC0_VERSION_MASK=0x03
@@ -65,18 +73,20 @@ class IEEE80211(object):
 
 class ProbeFrame(IEEE80211):
 
-	def __init__(self, addr1, addr2, addr3, nwid):
+	def __init__(self, addr1, addr2, addr3, nwid, timeval):
 		self.addr1 = addr1
 		self.addr2 = addr2
 		self.addr3 = addr3
 		self.nwid = nwid
+		self.timeval = timeval
 
 	def __repr__(self):
-		return "{0} {1} {2} {3}".format(
+		return "{0} {1} {2} {3} {4}".format(
 			self.addr1,
 			self.addr2,
 			self.addr3,
 			self.nwid,
+			self.timeval,
 		)
 
 	@classmethod
@@ -106,6 +116,7 @@ class ProbeFrame(IEEE80211):
 				ps_80211_addr2(),
 				ps_80211_addr3(),
 				ps_80211_nwid(),
+				ps_80211_timeval(),
 			)
 
 			yield probeframe
