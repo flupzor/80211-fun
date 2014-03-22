@@ -17,6 +17,8 @@
 from ctypes import *
 from ctypes.util import find_library
 
+from datetime import datetime, timedelta
+
 import os
 
 PROJECT_DIR=os.path.dirname(os.path.realpath(__file__))
@@ -27,6 +29,9 @@ class BPFTimeval(Structure):
 
     def __repr__(self):
         return "{0}.{1}".format(self.tv_sec, self.tv_usec)
+
+    def to_datetime(self):
+        return datetime.fromtimestamp(self.tv_sec) + timedelta(microseconds=self.tv_usec)
 
 " Declarations "
 
@@ -87,6 +92,7 @@ class ProbeFrame(IEEE80211):
 			self.addr3,
 			self.nwid,
 			self.timeval,
+			self.timeval.to_datetime(),
 		)
 
 	@classmethod
