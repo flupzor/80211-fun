@@ -21,13 +21,20 @@
  *
  */
 
+#include <sys/types.h>
+#include <sys/socket.h>
+
 #include <pcap.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include <net/if.h>
+#include <netinet/in.h>
+#include <netinet/if_ether.h>
 #include <net80211/ieee80211.h>
 #include <net80211/ieee80211_radiotap.h>
 
+#if 0
 extern const char *__progname;
 
 void
@@ -36,6 +43,7 @@ ps_usage(void)
 	fprintf(stderr, "usage: %s pcap_dump", __progname);
 	exit(EXIT_FAILURE);
 }
+#endif
 
 struct ps_probe_frame {
 	struct pcap_pkthdr			*pcap_pkt_hdr;
@@ -181,8 +189,7 @@ ps_parse_pcap(pcap_t *pd, struct ps_probe_frame *probe_frame)
 
 	r = pcap_next_ex(pd, &pkt_hdr, &pkt_buf);
 	if (r != 1) {
-		pcap_perror(pd, "pcap_next_ex");
-		printf("error\n");
+//		pcap_perror(pd, "pcap_next_ex");
 		return -1;
 	}
 
@@ -196,13 +203,101 @@ ps_parse_pcap(pcap_t *pd, struct ps_probe_frame *probe_frame)
 	return ps_parse_radiotap(probe_frame, pkt_buf, pkt_hdr->len);
 }
 
+/*
+ * Python wrapper code
+ */
+
+struct ps_probe_frame		 g_probe_frame;
+pcap_t				*g_pd;
+
+int
+ps_open(char *file)
+{
+	char	 		 errbuf[PCAP_ERRBUF_SIZE];
+
+	g_pd = pcap_open_offline(file, errbuf);
+	if (! g_pd) {
+		fprintf(stderr, "%s\n", errbuf);
+		return -1;
+	}
+
+	return 0;
+}
+
+int
+ps_next(void)
+{
+	int r;
+
+	bzero(&g_probe_frame, sizeof(g_probe_frame));
+	r = ps_parse_pcap(g_pd, &g_probe_frame);
+	if (r != 0)
+		return -1;
+
+	return 0;
+}
+
+u_int8_t
+ps_80211_type(void)
+{
+	return g_probe_frame.ieee80211_type;
+}
+
+u_int8_t
+ps_80211_subtype(void)
+{
+	return g_probe_frame.ieee80211_subtype;
+}
+
+int
+ps_80211_invalid_frame(void)
+{
+	return g_probe_frame.invalid_frame;
+}
+
+char *
+ps_80211_addr(char *addr)
+{
+	struct ether_addr	 ether_addr;
+
+	memcpy(ether_addr.ether_addr_octet, addr, sizeof(ether_addr.ether_addr_octet));
+
+	return ether_ntoa(&ether_addr);
+}
+
+char *
+ps_80211_addr1(void)
+{
+	return ps_80211_addr(g_probe_frame.ieee80211_frame_hdr->i_addr1);
+}
+
+char *
+ps_80211_addr2(void)
+{
+	return ps_80211_addr(g_probe_frame.ieee80211_frame_hdr->i_addr2);
+}
+
+char *
+ps_80211_addr3(void)
+{
+	return ps_80211_addr(g_probe_frame.ieee80211_frame_hdr->i_addr3);
+}
+
+int
+ps_80211_frag(void)
+{
+	return g_probe_frame.ieee80211_frag;
+}
+
+#if 0
 int
 main(int argc, char *argv[])
 {
 	pcap_t			*pd;
 	struct ps_probe_frame	 probe_frame;
-	char	 		 errbuf[PCAP_ERRBUF_SIZE];
+	char	 		 errbuf[PCAP_ERRBUF_SIZE], *addr1, *addr2, *addr3;
 	int	 		 r;
+	struct ether_addr	 ether_addr1, ether_addr2, ether_addr3;
 
 	if (argc < 2)
 		ps_usage();
@@ -234,12 +329,22 @@ main(int argc, char *argv[])
 		if (probe_frame.ieee80211_frag != 0)
 			continue;
 
-		printf("type: %x\n", probe_frame.ieee80211_type);
-		printf("subtype: %x\n", probe_frame.ieee80211_subtype);
+		addr1 = probe_frame.ieee80211_frame_hdr->i_addr1;
+		addr2 = probe_frame.ieee80211_frame_hdr->i_addr2;
+		addr3 = probe_frame.ieee80211_frame_hdr->i_addr3;
 
-		printf("nwid: %s\n", probe_frame.ieee80211_nwid);
+		memcpy(ether_addr1.ether_addr_octet, addr1, sizeof(ether_addr1.ether_addr_octet));
+		memcpy(ether_addr2.ether_addr_octet, addr2, sizeof(ether_addr2.ether_addr_octet));
+		memcpy(ether_addr3.ether_addr_octet, addr3, sizeof(ether_addr3.ether_addr_octet));
 
+//		printf("nwid: %s addr1: %s addr2: %s addr3: %s\n",
+		printf("%.2d%s%2.d%s%.2d%s%.2d%s\n",
+			strlen(probe_frame.ieee80211_nwid), probe_frame.ieee80211_nwid,
+			strlen(ether_ntoa(&ether_addr1)), ether_ntoa(&ether_addr1),
+			strlen(ether_ntoa(&ether_addr2)), ether_ntoa(&ether_addr2),
+			strlen(ether_ntoa(&ether_addr3)), ether_ntoa(&ether_addr3));
 	}
 
 	exit(EXIT_SUCCESS);
 }
+#endif
