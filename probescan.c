@@ -34,17 +34,6 @@
 #include <net80211/ieee80211.h>
 #include <net80211/ieee80211_radiotap.h>
 
-#if 0
-extern const char *__progname;
-
-void
-ps_usage(void)
-{
-	fprintf(stderr, "usage: %s pcap_dump", __progname);
-	exit(EXIT_FAILURE);
-}
-#endif
-
 struct ps_probe_frame {
 	struct pcap_pkthdr			*pcap_pkt_hdr;
 	const u_char				*pcap_pkt_ptr;
@@ -288,63 +277,3 @@ ps_80211_frag(void)
 {
 	return g_probe_frame.ieee80211_frag;
 }
-
-#if 0
-int
-main(int argc, char *argv[])
-{
-	pcap_t			*pd;
-	struct ps_probe_frame	 probe_frame;
-	char	 		 errbuf[PCAP_ERRBUF_SIZE], *addr1, *addr2, *addr3;
-	int	 		 r;
-	struct ether_addr	 ether_addr1, ether_addr2, ether_addr3;
-
-	if (argc < 2)
-		ps_usage();
-
-	pd = pcap_open_offline(argv[1], errbuf);
-
-	if (! pd) {
-		fprintf(stderr, "%s\n", errbuf);
-		exit(EXIT_FAILURE);
-	}
-
-	for (;;) {
-		bzero(&probe_frame, sizeof(probe_frame));
-		r = ps_parse_pcap(pd, &probe_frame);
-		if (r != 0)
-			break;
-
-		if (probe_frame.ieee80211_type != IEEE80211_FC0_TYPE_MGT &&
-		    probe_frame.ieee80211_subtype != IEEE80211_FC0_SUBTYPE_PROBE_REQ)
-			continue;
-
-		if (probe_frame.invalid_frame)
-			continue;
-
-		if (strlen(probe_frame.ieee80211_nwid) == 0)
-			continue;
-
-		// XXX: we don't know how to handle fragmented probes.
-		if (probe_frame.ieee80211_frag != 0)
-			continue;
-
-		addr1 = probe_frame.ieee80211_frame_hdr->i_addr1;
-		addr2 = probe_frame.ieee80211_frame_hdr->i_addr2;
-		addr3 = probe_frame.ieee80211_frame_hdr->i_addr3;
-
-		memcpy(ether_addr1.ether_addr_octet, addr1, sizeof(ether_addr1.ether_addr_octet));
-		memcpy(ether_addr2.ether_addr_octet, addr2, sizeof(ether_addr2.ether_addr_octet));
-		memcpy(ether_addr3.ether_addr_octet, addr3, sizeof(ether_addr3.ether_addr_octet));
-
-//		printf("nwid: %s addr1: %s addr2: %s addr3: %s\n",
-		printf("%.2d%s%2.d%s%.2d%s%.2d%s\n",
-			strlen(probe_frame.ieee80211_nwid), probe_frame.ieee80211_nwid,
-			strlen(ether_ntoa(&ether_addr1)), ether_ntoa(&ether_addr1),
-			strlen(ether_ntoa(&ether_addr2)), ether_ntoa(&ether_addr2),
-			strlen(ether_ntoa(&ether_addr3)), ether_ntoa(&ether_addr3));
-	}
-
-	exit(EXIT_SUCCESS);
-}
-#endif
