@@ -277,3 +277,9 @@ ps_80211_frag(void)
 {
 	return g_probe_frame.ieee80211_frag;
 }
+
+char *
+ps_80211_nwid(void)
+{
+	return g_probe_frame.ieee80211_nwid;
+}

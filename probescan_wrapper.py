@@ -30,6 +30,9 @@ ps_80211_invalid_frame = ps.ps_80211_invalid_frame
 
 ps_80211_frag = ps.ps_80211_frag
 
+ps_80211_nwid = ps.ps_80211_nwid
+ps_80211_nwid.restype = c_char_p
+
 
 class IEEE80211(object):
 	IEEE80211_FC0_VERSION_MASK=0x03
@@ -46,16 +49,18 @@ class IEEE80211(object):
 
 class ProbeFrame(IEEE80211):
 
-	def __init__(self, addr1, addr2, addr3):
+	def __init__(self, addr1, addr2, addr3, nwid):
 		self.addr1 = addr1
 		self.addr2 = addr2
 		self.addr3 = addr3
+		self.nwid = nwid
 
 	def __repr__(self):
-		return "{0} {1} {2}".format(
+		return "{0} {1} {2} {3}".format(
 			self.addr1,
 			self.addr2,
 			self.addr3,
+			self.nwid,
 		)
 
 	@classmethod
@@ -84,6 +89,7 @@ class ProbeFrame(IEEE80211):
 				ps_80211_addr1(),
 				ps_80211_addr2(),
 				ps_80211_addr3(),
+				ps_80211_nwid(),
 			)
 
 			yield probeframe
