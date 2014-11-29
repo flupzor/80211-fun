@@ -79,22 +79,18 @@ def main():
         while not isinstance(dot11_elem, NoPayload):
             assert(isinstance(dot11_elem, Dot11Elt))
 
+            # 802.11 elem type mapping (See 8.4.2.1, Table 8-54 From 802.11-2012.pdf)
             dot11_elem_types = {
                 0: "SSID",
-                1: "Rates",
-                2: "FHset",
-                3: "DSset",
-                4: "CFset",
+                1: "Supported rates",
+                2: "FH Parameter Set",
+                3: "DSSS Parameter Set",
+                4: "CF Parameter Set",
                 5: "TIM",
-                6:"IBSSset",
-                16:"challenge",
-                42:"ERPinfo",
-                46:"QoS Capability",
-                47:"ERPinfo",
-                48:"RSNinfo",
-                50:"ESRates",
-                221:"vendor",
-                68:"reserved"
+                6: "IBSS Parameter Set",
+                7: "Country",
+                8: "Hopping Pattern Parameters",
+                # XXX: add more.
             }
 
             dot11_elem_type = "Unknown"
